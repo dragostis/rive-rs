@@ -1,4 +1,4 @@
-use std::{fs, time::Instant};
+use std::{fs, time::Duration, time::Instant};
 
 use rive_rs::{Artboard, File, Handle, Instantiate, Viewport};
 use vello::{
@@ -9,7 +9,7 @@ use vello::{
 };
 use winit::{
     dpi::LogicalSize,
-    event::{ElementState, Event, MouseButton, WindowEvent},
+    event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
@@ -37,6 +37,10 @@ fn main() {
     let mut scroll_delta = 0.0;
     let mut frame_start_time = Instant::now();
     let mut stats = Vec::with_capacity(FRAME_STATS_CAPACITY);
+
+    let mut h = 0;
+    let mut j = 0;
+    let mut k = 0;
 
     event_loop.run(move |event, _event_loop, control_flow| match event {
         Event::WindowEvent { ref event, .. } => {
@@ -94,6 +98,20 @@ fn main() {
                         Box::<dyn rive_rs::Scene>::instantiate(&artboard, Handle::Default).unwrap()
                     });
                 }
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            state: ElementState::Pressed,
+                            virtual_keycode,
+                            ..
+                        },
+                    ..
+                } => match virtual_keycode {
+                    Some(VirtualKeyCode::H) => h += 1,
+                    Some(VirtualKeyCode::J) => j += 1,
+                    Some(VirtualKeyCode::K) => k += 1,
+                    _ => (),
+                },
                 _ => {}
             }
         }
@@ -104,7 +122,6 @@ fn main() {
         }
         Event::RedrawRequested(_) => {
             let mut rive_renderer = rive_rs::Renderer::default();
-            let factor = (scroll_delta / SCROLL_FACTOR_THRESHOLD).max(1.0) as u32;
 
             let elapsed = &frame_start_time.elapsed();
             stats.push(elapsed.as_secs_f64());
@@ -113,8 +130,8 @@ fn main() {
                 let average = stats.drain(..).sum::<f64>() / FRAME_STATS_CAPACITY as f64;
 
                 if let Some(state) = &mut render_state {
-                    let copies = (factor > 1)
-                        .then(|| format!(" ({} copies)", factor.pow(2)))
+                    let copies = (h > 0 || j > 0 || k > 0)
+                        .then(|| format!(" ({} copies)", (1 + h * 2) * (1 + k + j)))
                         .unwrap_or_default();
                     state.window.set_title(&format!(
                         "Rive on Vello demo | {:.2}ms{}",
@@ -137,6 +154,7 @@ fn main() {
                 base_color: Color::DIM_GRAY,
                 width,
                 height,
+                antialiasing_method: vello::AaConfig::Msaa16,
             };
 
             let surface_texture = render_state
@@ -147,23 +165,36 @@ fn main() {
 
             let mut vello_scene = Scene::default();
             let mut builder = SceneBuilder::for_scene(&mut vello_scene);
+            let spacing = 200;
+            let instances = ((1 + h * 2) * (1 + k + j)) as f64;
 
             if let Some(scene) = &mut scene {
-                scene.advance_and_maybe_draw(&mut rive_renderer, *elapsed, &mut viewport);
+                let advance_per_instance = scene
+                    .duration()
+                    .map(|d| Duration::from_secs_f64(d.as_secs_f64() / instances * 797.0))
+                    .unwrap_or_default();
 
-                for i in 0..factor.pow(2) {
-                    builder.append(
-                        rive_renderer.scene(),
-                        Some(
-                            Affine::default()
-                                .then_scale(1.0 / factor as f64)
-                                .then_translate(Vec2::new(
-                                    (i % factor) as f64 * width as f64 / factor as f64,
-                                    (i / factor) as f64 * height as f64 / factor as f64,
-                                )),
-                        ),
-                    );
+                for j in 0..(k + 1 + j) {
+                    for i in 0..(h * 2 + 1) {
+                        use rive_rs::renderer::Renderer as _;
+                        rive_renderer.transform(&[
+                            1.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            ((i - h) * spacing) as f32,
+                            ((j - k) * spacing) as f32,
+                        ]);
+                        let mut advance = advance_per_instance;
+                        if j == 0 && i == 0 {
+                            advance += *elapsed;
+                        }
+                        scene.advance_and_maybe_draw(&mut rive_renderer, advance, &mut viewport);
+                        rive_renderer.state_pop();
+                    }
                 }
+
+                builder.append(rive_renderer.scene(), Some(Affine::default()));
             } else {
                 // Vello doesn't draw base color when there is no geometry.
                 builder.fill(
@@ -220,12 +251,13 @@ fn main() {
                 renderer = Some(
                     Renderer::new(
                         &render_cx.devices[render_state.surface.dev_id].device,
-                        &RendererOptions {
+                        RendererOptions {
                             surface_format: Some(render_state.surface.format),
                             timestamp_period: render_cx.devices[render_state.surface.dev_id]
                                 .queue
                                 .get_timestamp_period(),
                             use_cpu: false,
+                            antialiasing_support: vello::AaSupport::all(),
                         },
                     )
                     .expect("Could create renderer"),

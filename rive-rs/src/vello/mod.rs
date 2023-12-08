@@ -3,10 +3,9 @@ use std::{fmt, io::Cursor};
 use image::io::Reader;
 use smallvec::SmallVec;
 use vello::{
-    kurbo::{Affine, BezPath, Line, PathSeg, Point, Rect, Shape, Vec2},
+    kurbo::{Affine, BezPath, Cap, Join, Line, PathSeg, Point, Rect, Shape, Stroke, Vec2},
     peniko::{
-        self, BlendMode, Brush, BrushRef, Cap, Color, ColorStop, ColorStopsSource, Fill, Format,
-        Join, Mix, Stroke,
+        self, BlendMode, Brush, BrushRef, Color, ColorStop, ColorStopsSource, Fill, Format, Mix,
     },
     SceneBuilder, SceneFragment,
 };
@@ -242,7 +241,7 @@ impl renderer::Paint for Paint {
     fn set_thickness(&mut self, thickness: f32) {
         loop {
             if let RenderStyle::Stroke(stroke) = &mut self.style {
-                stroke.width = thickness;
+                stroke.width = thickness as f64;
                 break;
             } else {
                 self.style = RenderStyle::Stroke(Stroke::new(0.0));

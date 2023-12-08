@@ -192,7 +192,7 @@ macro_rules! impl_scene {
                 viewport.inverse_view_transform = inverse_view_transform;
 
                 if !self.advance_and_apply(elapsed) {
-                    return false;
+                    // return false;
                 }
 
                 renderer.state_push();
