@@ -1586,6 +1586,7 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 [[package]]
 name = "vello"
 version = "0.0.1"
+source = "git+https://github.com/dragostis/vello#0b9e1457da43b629ebd0a21ba5147f7606bd7e0a"
 dependencies = [
  "bytemuck",
  "fello",
@@ -1600,6 +1601,7 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.1.0"
+source = "git+https://github.com/dragostis/vello#0b9e1457da43b629ebd0a21ba5147f7606bd7e0a"
 dependencies = [
  "bytemuck",
  "fello",

@@ -3,4 +3,4 @@ members = ["rive-rs", "examples/*"]
 resolver = "2"
 
 [workspace.dependencies]
-vello = { path = "../vello" }
+vello = { git = "https://github.com/dragostis/vello" }
