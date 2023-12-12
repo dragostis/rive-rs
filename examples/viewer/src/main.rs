@@ -141,8 +141,6 @@ fn main() {
                 }
             }
 
-            frame_start_time = Instant::now();
-
             let Some(render_state) = &mut render_state else {
                 return;
             };
@@ -206,19 +204,20 @@ fn main() {
                 );
             }
 
-            if !vello_scene.data().is_empty() {
-                vello::block_on_wgpu(
+            // Skip Rive runtime in frame time measurements.
+            frame_start_time = Instant::now();
+
+            vello::block_on_wgpu(
+                &device_handle.device,
+                renderer.as_mut().unwrap().render_to_surface_async(
                     &device_handle.device,
-                    renderer.as_mut().unwrap().render_to_surface_async(
-                        &device_handle.device,
-                        &device_handle.queue,
-                        &vello_scene,
-                        &surface_texture,
-                        &render_params,
-                    ),
-                )
-                .expect("failed to render to surface");
-            }
+                    &device_handle.queue,
+                    &vello_scene,
+                    &surface_texture,
+                    &render_params,
+                ),
+            )
+            .expect("failed to render to surface");
 
             surface_texture.present();
             device_handle.device.poll(wgpu::Maintain::Poll);
