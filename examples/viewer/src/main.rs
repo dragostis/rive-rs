@@ -95,7 +95,8 @@ fn main() {
                         let file = File::new(&fs::read(path).unwrap()).unwrap();
                         let artboard = Artboard::instantiate(&file, Handle::Default).unwrap();
 
-                        Box::<dyn rive_rs::Scene>::instantiate(&artboard, Handle::Default).unwrap()
+                        Box::<dyn rive_rs::Scene>::instantiate(&artboard, Handle::Default)
+                            .unwrap_or_else(|| Box::new(artboard) as Box<dyn rive_rs::Scene>)
                     });
                 }
                 WindowEvent::KeyboardInput {
@@ -141,6 +142,8 @@ fn main() {
                 }
             }
 
+            frame_start_time = Instant::now();
+
             let Some(render_state) = &mut render_state else {
                 return;
             };
@@ -152,7 +155,7 @@ fn main() {
                 base_color: Color::DIM_GRAY,
                 width,
                 height,
-                antialiasing_method: vello::AaConfig::Msaa16,
+                antialiasing_method: vello::AaConfig::Area,
             };
 
             let surface_texture = render_state
@@ -204,8 +207,17 @@ fn main() {
                 );
             }
 
-            // Skip Rive runtime in frame time measurements.
-            frame_start_time = Instant::now();
+            // if let Some(profiling_result) = renderer
+            //     .as_mut()
+            //     .and_then(|it| it.profile_result.take())
+            // {
+            //     if !profiling_result.is_empty() {
+            //         let start = profiling_result.first().unwrap().time.start;
+            //         let end = profiling_result.last().unwrap().time.end;
+
+            //         dbg!((end - start) * 1000.0);
+            //     }
+            // }
 
             vello::block_on_wgpu(
                 &device_handle.device,

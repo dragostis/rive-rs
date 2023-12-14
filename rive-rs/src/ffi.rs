@@ -508,6 +508,14 @@ extern "C" {
         artboard_instance: *mut Artboard,
         index: usize,
     ) -> *mut Component;
+    pub fn rive_rs_artboard_width(artboard_instance: *const Artboard) -> f32;
+    pub fn rive_rs_artboard_height(artboard_instance: *const Artboard) -> f32;
+    pub fn rive_rs_artboard_advance(artboard_instance: *mut Artboard);
+    pub fn rive_rs_artboard_draw(
+        artboard_instance: *mut Artboard,
+        renderer: *mut (),
+        entries: *const (),
+    );
     pub fn rive_rs_component_type_id(component: *const Component) -> u16;
     pub fn rive_rs_component_name(
         component: *const Component,

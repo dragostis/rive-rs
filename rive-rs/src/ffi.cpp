@@ -5,6 +5,7 @@
 #include "rive/animation/state_machine_instance.hpp"
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
+#include "rive/artboard.hpp"
 #include "rive/custom_property_boolean.hpp"
 #include "rive/custom_property_number.hpp"
 #include "rive/custom_property_string.hpp"
@@ -437,6 +438,29 @@ extern "C"
                                                size_t index)
     {
         return artboard_instance->objects()[index];
+    }
+
+    float rive_rs_artboard_width(const ArtboardInstance* artboard_instance)
+    {
+        return artboard_instance->width();
+    }
+
+    float rive_rs_artboard_height(const ArtboardInstance* artboard_instance)
+    {
+        return artboard_instance->height();
+    }
+
+    void rive_rs_artboard_advance(ArtboardInstance* artboard_instance)
+    {
+        artboard_instance->advance(0);
+    }
+
+    void rive_rs_artboard_draw(ArtboardInstance* artboard_instance,
+                               const RawRustRenderer* renderer,
+                               const RendererEntries* entries)
+    {
+        RustRenderer rust_renderer(renderer, entries);
+        artboard_instance->draw(&rust_renderer, Artboard::DrawOption::kNormal);
     }
 
     uint16_t rive_rs_component_type_id(const Core* component) { return component->coreType(); }
